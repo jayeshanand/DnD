@@ -10,7 +10,7 @@ A complete step-by-step implementation guide from "nothing" to "full AI-powered 
 |-------|------|--------|---|---|
 | 0 | Foundations & Tech | ✅ Done | Setup | Low |
 | 1 | Text-Only Single-DM | ✅ Done | **Playable** | Low |
-| 2 | Structured JSON Output | 📋 Ready | **More Playable** | Medium |
+| 2 | Structured JSON Output | ✅ Done | **More Playable** | Medium |
 | 3 | NPC Objects & Personalities | ⏳ Planned | **Rich** | Medium |
 | 4 | Memory System | ⏳ Planned | **Immersive** | Medium |
 | 5 | Multi-Agent NPCs | ⏳ Planned | **Dynamic** | High |
@@ -71,7 +71,7 @@ Player Input → CLI → Engine → Prompt Builder → Ollama → Narration → 
 
 ---
 
-## Phase 2: Structured JSON Output & State Management 📋
+## Phase 2: Structured JSON Output & State Management ✅
 
 **Goal**: Make game state updates deterministic and visible.
 
