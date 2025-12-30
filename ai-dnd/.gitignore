@@ -21,8 +21,8 @@ wheels/
 MANIFEST
 
 # Virtual environments
-venv/
-env/
+.venv/
+.env/
 ENV/
 
 # IDE
