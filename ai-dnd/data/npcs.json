@@ -1,0 +1,56 @@
+{
+  "bartender": {
+    "id": "bartender",
+    "name": "Mira",
+    "role": "bartender",
+    "location": "tavern",
+    "personality": "gruff but kind, enjoys gossip",
+    "faction": "locals",
+    "goals": ["keep bar safe", "earn money", "know everyone's business"],
+    "traits": {
+      "courage": 0.5,
+      "honor": 0.6,
+      "intelligence": 0.7,
+      "charisma": 0.8
+    },
+    "relationship_to_player": 0.0,
+    "description": "A stout woman with a weathered face and quick eyes. She wears an apron over sturdy clothes.",
+    "dialogue_sample": "What can I get you, traveler?"
+  },
+  "merchant": {
+    "id": "merchant",
+    "name": "Aldric",
+    "role": "merchant",
+    "location": "market",
+    "personality": "cunning, always looking for a deal",
+    "faction": "traders",
+    "goals": ["make profit", "find rare goods"],
+    "traits": {
+      "courage": 0.3,
+      "honor": 0.4,
+      "intelligence": 0.8,
+      "charisma": 0.7
+    },
+    "relationship_to_player": 0.1,
+    "description": "A sharp-dressed man with keen eyes and a calculating smile. He constantly adjusts his merchant's scales.",
+    "dialogue_sample": "Looking for something special? I might have just the thing..."
+  },
+  "shopkeeper": {
+    "id": "shopkeeper",
+    "name": "Thom",
+    "role": "shopkeeper",
+    "location": "general_store",
+    "personality": "cheerful, helpful, loves talking to customers",
+    "faction": "locals",
+    "goals": ["help adventurers", "sell supplies"],
+    "traits": {
+      "courage": 0.4,
+      "honor": 0.8,
+      "intelligence": 0.6,
+      "charisma": 0.7
+    },
+    "relationship_to_player": 0.0,
+    "description": "A stocky man with a round face and a permanent friendly smile. His hands are always busy organizing inventory.",
+    "dialogue_sample": "Welcome, friend! Can I interest you in anything?"
+  }
+}

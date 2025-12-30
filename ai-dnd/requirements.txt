@@ -1,0 +1,6 @@
+requests==2.31.0
+pyyaml==6.0.1
+pydantic>=2.0.0
+
+# Memory & Vector DB (Phase 4+)
+# chromadb>=0.4.20  # Uncomment in Phase 4

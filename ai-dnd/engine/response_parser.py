@@ -1,0 +1,174 @@
+"""Parser and validator for structured DM responses."""
+
+import json
+import re
+from typing import Optional
+from datetime import datetime
+
+from engine.state import GameState
+from engine.response_schema import DMResponse, NPCResponse, WorldEffect
+
+
+class ResponseParser:
+    """Parser for extracting and validating DMResponse from LLM output."""
+
+    @staticmethod
+    def extract_json(text: str) -> Optional[str]:
+        """
+        Extract JSON from LLM response text.
+        
+        Handles cases where LLM adds extra text before/after JSON.
+        """
+        # Try to find JSON block with curly braces
+        match = re.search(r'\{.*\}', text, re.DOTALL)
+        if match:
+            return match.group(0)
+        
+        # If no match, return text as-is and let JSON parser try
+        return text.strip()
+
+    @staticmethod
+    def parse_response(text: str) -> Optional[DMResponse]:
+        """
+        Parse LLM text into DMResponse object.
+        
+        Returns None if parsing fails.
+        """
+        try:
+            # Extract JSON
+            json_str = ResponseParser.extract_json(text)
+            if not json_str:
+                return None
+            
+            # Parse JSON
+            data = json.loads(json_str)
+            
+            # Convert to DMResponse
+            return DMResponse.from_dict(data)
+            
+        except json.JSONDecodeError as e:
+            print(f"[JSON Parse Error: {e}]")
+            return None
+        except Exception as e:
+            print(f"[Response Parse Error: {e}]")
+            return None
+
+    @staticmethod
+    def create_fallback_response(player_action: str) -> DMResponse:
+        """
+        Create a fallback response when parsing fails.
+        """
+        return DMResponse(
+            narration=f"You attempt to {player_action}. The world shimmers mysteriously as reality adjusts.",
+            npc_speeches=[],
+            effects=WorldEffect(time_delta=5),
+            suggested_options=["Try something else", "Look around", "Wait and see"],
+            timestamp=datetime.now().isoformat()
+        )
+
+
+class ResponseValidator:
+    """Validator for ensuring DMResponse is consistent with game state."""
+
+    @staticmethod
+    def validate_dm_response(response: DMResponse, game_state: GameState) -> tuple[bool, list[str]]:
+        """
+        Validate DMResponse against game state.
+        
+        Returns:
+            (is_valid, list_of_issues)
+        """
+        issues = []
+        
+        # Validate location
+        if response.effects.location:
+            if response.effects.location not in game_state.locations:
+                issues.append(f"Invalid location: {response.effects.location}")
+        
+        # Validate NPCs
+        for npc_speech in response.npc_speeches:
+            if npc_speech.npc_id not in game_state.npcs:
+                issues.append(f"Invalid NPC ID: {npc_speech.npc_id}")
+        
+        # Validate NPC relationships
+        for npc_id, delta in response.effects.npc_relationship_changes.items():
+            if npc_id not in game_state.npcs:
+                issues.append(f"Invalid NPC in relationship changes: {npc_id}")
+            if not (-1.0 <= delta <= 1.0):
+                issues.append(f"Relationship change out of range for {npc_id}: {delta}")
+        
+        # Validate quests
+        for quest_id in response.effects.completed_quests:
+            if quest_id not in game_state.active_quests:
+                issues.append(f"Cannot complete non-existent quest: {quest_id}")
+        
+        # Validate HP change doesn't go below 0 or above max
+        potential_hp = game_state.player.hp + response.effects.hp_change
+        if potential_hp < 0 or potential_hp > game_state.player.max_hp:
+            issues.append(f"HP change would result in invalid HP: {potential_hp}")
+        
+        # Validate gold doesn't go negative
+        potential_gold = game_state.player.gold + response.effects.gold_change
+        if potential_gold < 0:
+            issues.append(f"Gold change would result in negative gold: {potential_gold}")
+        
+        return len(issues) == 0, issues
+
+    @staticmethod
+    def sanitize_effects(response: DMResponse, game_state: GameState) -> DMResponse:
+        """
+        Sanitize and fix common issues in DMResponse.
+        
+        Returns a corrected DMResponse.
+        """
+        effects = response.effects
+        
+        # Fix location if invalid
+        if effects.location and effects.location not in game_state.locations:
+            print(f"[Sanitizing: Invalid location '{effects.location}' -> keeping current]")
+            effects.location = None
+        
+        # Remove invalid NPCs from speeches
+        valid_speeches = [
+            npc for npc in response.npc_speeches
+            if npc.npc_id in game_state.npcs
+        ]
+        if len(valid_speeches) != len(response.npc_speeches):
+            print(f"[Sanitizing: Removed {len(response.npc_speeches) - len(valid_speeches)} invalid NPC speeches]")
+            response.npc_speeches = valid_speeches
+        
+        # Clamp relationship changes
+        sanitized_relationships = {}
+        for npc_id, delta in effects.npc_relationship_changes.items():
+            if npc_id in game_state.npcs:
+                clamped = max(-1.0, min(1.0, delta))
+                sanitized_relationships[npc_id] = clamped
+                if clamped != delta:
+                    print(f"[Sanitizing: Clamped relationship change for {npc_id}: {delta} -> {clamped}]")
+        effects.npc_relationship_changes = sanitized_relationships
+        
+        # Remove completed quests that don't exist
+        valid_completed = [
+            qid for qid in effects.completed_quests
+            if qid in game_state.active_quests
+        ]
+        if len(valid_completed) != len(effects.completed_quests):
+            print(f"[Sanitizing: Removed invalid completed quests]")
+            effects.completed_quests = valid_completed
+        
+        # Clamp HP change
+        potential_hp = game_state.player.hp + effects.hp_change
+        if potential_hp < 0:
+            effects.hp_change = -game_state.player.hp
+            print(f"[Sanitizing: Clamped HP change to prevent negative HP]")
+        elif potential_hp > game_state.player.max_hp:
+            effects.hp_change = game_state.player.max_hp - game_state.player.hp
+            print(f"[Sanitizing: Clamped HP change to prevent exceeding max HP]")
+        
+        # Clamp gold change
+        potential_gold = game_state.player.gold + effects.gold_change
+        if potential_gold < 0:
+            effects.gold_change = -game_state.player.gold
+            print(f"[Sanitizing: Clamped gold change to prevent negative gold]")
+        
+        return response

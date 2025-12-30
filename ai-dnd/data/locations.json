@@ -1,0 +1,88 @@
+{
+  "tavern": {
+    "id": "tavern",
+    "name": "The Wandering Griffin",
+    "description": "A cozy tavern with wooden beams and a roaring fireplace. The air smells of ale, roasted meat, and pipe smoke. A few patrons sit at scattered tables. The bar runs along the eastern wall, polished dark wood with brass fixtures. Lanterns cast a warm glow across the interior.",
+    "exits": {
+      "out": "town_square"
+    },
+    "npcs": ["bartender"],
+    "items": []
+  },
+  "town_square": {
+    "id": "town_square",
+    "name": "Town Square",
+    "description": "The heart of the town. A stone fountain sits in the center of the square, with water trickling peacefully. Shops and buildings line the streets. The sky above shows signs of the late afternoon, with golden light streaming between the buildings. A few citizens mill about on their daily business.",
+    "exits": {
+      "tavern": "tavern",
+      "north": "forest_entrance",
+      "east": "market"
+    },
+    "npcs": [],
+    "items": []
+  },
+  "forest_entrance": {
+    "id": "forest_entrance",
+    "name": "Forest Entrance",
+    "description": "The edge of a dense, ancient forest. Tall oaks and pines tower overhead, their branches forming a canopy that filters the sunlight into scattered patches. The air is cool and fresh. A worn path disappears into the shadows between the trees. You can hear the distant sound of running water and birds singing.",
+    "exits": {
+      "south": "town_square",
+      "deeper": "forest_path"
+    },
+    "npcs": [],
+    "items": []
+  },
+  "forest_path": {
+    "id": "forest_path",
+    "name": "Forest Path",
+    "description": "You are deep in the forest now. The canopy above is so thick that only dim, green-filtered light reaches the ground. Moss covers many of the older trees. Strange sounds echo through the woods - some animal, some unknown. The path forks ahead.",
+    "exits": {
+      "back": "forest_entrance",
+      "left": "stream",
+      "right": "ruins"
+    },
+    "npcs": [],
+    "items": []
+  },
+  "stream": {
+    "id": "stream",
+    "name": "Crystal Stream",
+    "description": "A clear, babbling stream flows through a small clearing. The water is pristine and inviting. Smooth stones line the banks. Sunlight breaks through the canopy here, and you can see fish darting in the water. It's peaceful and beautiful.",
+    "exits": {
+      "back": "forest_path"
+    },
+    "npcs": [],
+    "items": []
+  },
+  "ruins": {
+    "id": "ruins",
+    "name": "Ancient Ruins",
+    "description": "Crumbling stone structures peek through the forest growth. Vines climb walls that might once have been grand. You can make out weathered carvings and symbols you don't recognize. The air feels heavy here, charged with history and secrets. Shadows seem deeper among the broken stones.",
+    "exits": {
+      "back": "forest_path"
+    },
+    "npcs": [],
+    "items": []
+  },
+  "market": {
+    "id": "market",
+    "name": "Market District",
+    "description": "The bustling market district with various stalls and shops. Merchants call out their wares. Barrels of vegetables, bolts of cloth, weapons, trinkets - all manner of goods are for sale. The cobblestone street is crowded with shoppers. The smell of food and spices fills the air.",
+    "exits": {
+      "west": "town_square",
+      "shop": "general_store"
+    },
+    "npcs": ["merchant"],
+    "items": []
+  },
+  "general_store": {
+    "id": "general_store",
+    "name": "General Store",
+    "description": "A well-organized shop packed with supplies. Shelves line the walls stacked with rope, tools, food, and other useful items. The owner stands behind the counter. It smells like wood and leather.",
+    "exits": {
+      "out": "market"
+    },
+    "npcs": ["shopkeeper"],
+    "items": []
+  }
+}

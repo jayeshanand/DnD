@@ -1,0 +1,48 @@
+{
+  "combat": {
+    "base_damage": {
+      "sword": 1,
+      "unarmed": 0
+    },
+    "defense": {
+      "armor": 0,
+      "shield": 0
+    }
+  },
+  "experience": {
+    "kill_common_enemy": 10,
+    "kill_boss": 100,
+    "complete_quest": 50,
+    "level_up_threshold": 100
+  },
+  "skills": [
+    "strength",
+    "dexterity",
+    "constitution",
+    "intelligence",
+    "wisdom",
+    "charisma"
+  ],
+  "classes": {
+    "warrior": {
+      "hp": 30,
+      "base_damage": 2,
+      "description": "Strong and durable"
+    },
+    "rogue": {
+      "hp": 20,
+      "base_damage": 2,
+      "description": "Fast and sneaky"
+    },
+    "mage": {
+      "hp": 15,
+      "base_damage": 3,
+      "description": "Powerful magic, fragile body"
+    },
+    "cleric": {
+      "hp": 25,
+      "base_damage": 1,
+      "description": "Can heal, moderate damage"
+    }
+  }
+}

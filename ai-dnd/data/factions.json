@@ -1,0 +1,22 @@
+{
+  "locals": {
+    "id": "locals",
+    "name": "Local Citizens",
+    "description": "The people who live and work in the town",
+    "goals": ["maintain stability", "prosper"],
+    "gold": 500,
+    "influence": 0.5,
+    "aggression": 0.2,
+    "members": ["bartender", "shopkeeper"]
+  },
+  "traders": {
+    "id": "traders",
+    "name": "Merchant Guild",
+    "description": "Traders and merchants dealing in goods and information",
+    "goals": ["increase wealth", "expand trade routes"],
+    "gold": 1000,
+    "influence": 0.6,
+    "aggression": 0.1,
+    "members": ["merchant"]
+  }
+}

@@ -1,0 +1,40 @@
+# AI D&D Engine Configuration
+
+# LLM Settings
+llm:
+  provider: "ollama"  # local LLM via Ollama
+  base_url: "http://localhost:11434"
+  model: "llama3.2:latest"  # or "mistral", "neural-chat", etc.
+  temperature: 0.8
+  top_p: 0.9
+  max_tokens: 1024
+
+# Game Settings
+game:
+  auto_save: true
+  save_interval: 5  # turns
+  save_file: "data/save_state.json"
+  log_turns: true
+  log_dir: "logs/"
+
+# Storage
+storage:
+  type: "json"  # "json" or "sqlite"
+  db_file: "data/game.db"
+  world_file: "data/world_state.json"
+  npcs_file: "data/npcs.json"
+  locations_file: "data/locations.json"
+  items_file: "data/items.json"
+  factions_file: "data/factions.json"
+
+# Memory
+memory:
+  vector_db: "chromadb"  # or "faiss"
+  embed_model: "all-MiniLM-L6-v2"
+  memory_dir: "data/memories"
+
+# UI
+ui:
+  width: 100
+  height: 40
+  narration_style: "rich"  # "rich" or "plain"
