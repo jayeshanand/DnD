@@ -166,7 +166,37 @@ class ResponseValidator:
         # Validate gold doesn't go negative
         potential_gold = game_state.player.gold + response.effects.gold_change
         if potential_gold < 0:
-            issues.append(f"Gold change would result in negative gold: {potential_gold}")
+            issues.append(f"Gold change would result in negative gold: {potential_gold} (Player only has {game_state.player.gold} gold)")
+        
+        # Detect suspicious free items (new items without gold cost)
+        if response.effects.new_items and response.effects.gold_change >= 0:
+            # Check if this is likely a purchase by looking for merchant/shopkeeper NPCs
+            current_location = game_state.locations.get(game_state.current_location_id)
+            if current_location:
+                for npc_id in current_location.npcs:
+                    npc = game_state.npcs.get(npc_id, {})
+                    role = npc.get('role', '').lower()
+                    if role in ['merchant', 'shopkeeper', 'bartender', 'vendor', 'trader']:
+                        issues.append(f"WARNING: Receiving items from {role} without gold cost. Items should be paid for!")
+                        break
+        
+        # Check for duplicate transactions in recent history
+        if response.effects.new_items and response.effects.gold_change < 0:
+            # Look at last 2 turns to see if same item was already purchased
+            recent_turns = game_state.conversation_history[-2:] if game_state.conversation_history else []
+            for turn in recent_turns:
+                turn_items = set()
+                # Parse effects_summary to find items
+                for effect in turn.get('effects_summary', []):
+                    if '📦 Gained:' in effect:
+                        item = effect.split('📦 Gained:')[1].strip()
+                        turn_items.add(item)
+                
+                # Check for overlap
+                current_items = set(response.effects.new_items)
+                overlap = turn_items & current_items
+                if overlap:
+                    issues.append(f"WARNING: Possible duplicate purchase - {', '.join(overlap)} was already received in recent turns")
         
         return len(issues) == 0, issues
 

@@ -33,5 +33,47 @@
     "description": "A torch for lighting dark places",
     "weight": 1,
     "value": 2
+  },
+  "bread": {
+    "id": "bread",
+    "name": "Loaf of Bread",
+    "description": "Fresh baked bread",
+    "weight": 0.5,
+    "value": 2
+  },
+  "ale": {
+    "id": "ale",
+    "name": "Mug of Ale",
+    "description": "A foaming mug of ale",
+    "weight": 1,
+    "value": 3
+  },
+  "stew": {
+    "id": "stew",
+    "name": "Bowl of Stew",
+    "description": "A hearty bowl of meat and vegetable stew",
+    "weight": 1,
+    "value": 5
+  },
+  "rations": {
+    "id": "rations",
+    "name": "Travel Rations",
+    "description": "Dried meat, cheese, and hardtack for traveling",
+    "weight": 2,
+    "value": 10
+  },
+  "lockpick": {
+    "id": "lockpick",
+    "name": "Lockpick Set",
+    "description": "Tools for picking locks",
+    "weight": 0.5,
+    "value": 15
+  },
+  "dagger": {
+    "id": "dagger",
+    "name": "Iron Dagger",
+    "description": "A small but sharp dagger",
+    "weight": 1,
+    "value": 20
   }
 }

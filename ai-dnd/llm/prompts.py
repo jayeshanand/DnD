@@ -87,9 +87,22 @@ NPC PERSONALITY RULES:
 - NPCs have their own goals and may pursue them in conversations
 - Mood affects how NPCs respond (happy NPCs are more helpful, upset ones less so)
 
+COMMERCE & TRANSACTION RULES:
+- ALWAYS charge for goods and services unless there's a specific reason not to (charity, quest reward, etc.)
+- When player requests an item or service, NPC should state the price BEFORE giving it
+- Use 'gold_change' with NEGATIVE values for purchases (e.g., -5 for a 5 gold item)
+- Only add items to 'new_items' AFTER gold is deducted
+- If player doesn't have enough gold, NPC should refuse or negotiate
+- Common prices: Food/drink 2-5 gold, Basic supplies 5-20 gold, Weapons 30-100 gold, Potions 20-50 gold
+- Merchants should be firm about prices; bartenders might give small discounts to regulars
+- NPCs should remember if player already paid for something in recent conversation history
+- Don't charge twice for the same item in the same conversation
+
 Turn structure:
 - Read the player's action
 - Consider NPC personalities and conversation history
+- Check if this is a commercial transaction (buying/selling)
+- If commercial: State price, deduct gold, then give item
 - Resolve mechanics and consequences
 - Describe what happens in 'narration'
 - Include NPC speeches in 'npc_speeches' with appropriate emotions
@@ -179,7 +192,7 @@ Time: {state.game_time}
 Name: {player.name}
 Class: {player.class_name}
 HP: {player.hp}/{player.max_hp}
-Gold: {player.gold}
+Gold: {player.gold} 💰 (IMPORTANT: Player can only afford items/services they have gold for)
 Inventory: {', '.join(state.player.inventory.items.keys()) if state.player.inventory.items else 'Empty'}
 
 === LOCATION ===
