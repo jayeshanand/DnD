@@ -5,14 +5,26 @@
     "role": "bartender",
     "location": "tavern",
     "personality": "gruff but kind, enjoys gossip",
+    "personality_traits": {
+      "archetype": "protector",
+      "temperament": "gruff_exterior_soft_heart",
+      "speech_style": "direct, no-nonsense, occasional warmth",
+      "quirks": ["wipes bar when stressed", "remembers everyone's drink order"],
+      "values": ["loyalty", "community", "honesty"],
+      "fears": ["losing the tavern", "violence escalating in her establishment"]
+    },
     "faction": "locals",
     "goals": ["keep bar safe", "earn money", "know everyone's business"],
+    "current_goal": "protect tavern patrons",
     "traits": {
       "courage": 0.5,
       "honor": 0.6,
       "intelligence": 0.7,
       "charisma": 0.8
     },
+    "mood": 0.0,
+    "current_location": "tavern",
+    "last_interaction_turn": 0,
     "relationship_to_player": 0.0,
     "description": "A stout woman with a weathered face and quick eyes. She wears an apron over sturdy clothes.",
     "dialogue_sample": "What can I get you, traveler?"
@@ -23,14 +35,26 @@
     "role": "merchant",
     "location": "market",
     "personality": "cunning, always looking for a deal",
+    "personality_traits": {
+      "archetype": "schemer",
+      "temperament": "calculating_opportunist",
+      "speech_style": "smooth, persuasive, indirect",
+      "quirks": ["adjusts scales nervously", "uses flattery excessively"],
+      "values": ["profit", "self-preservation", "information"],
+      "fears": ["being cheated", "losing reputation", "powerful customers"]
+    },
     "faction": "traders",
     "goals": ["make profit", "find rare goods"],
+    "current_goal": "acquire magical items to resell",
     "traits": {
       "courage": 0.3,
       "honor": 0.4,
       "intelligence": 0.8,
       "charisma": 0.7
     },
+    "mood": 0.2,
+    "current_location": "market",
+    "last_interaction_turn": 0,
     "relationship_to_player": 0.1,
     "description": "A sharp-dressed man with keen eyes and a calculating smile. He constantly adjusts his merchant's scales.",
     "dialogue_sample": "Looking for something special? I might have just the thing..."
@@ -41,16 +65,88 @@
     "role": "shopkeeper",
     "location": "general_store",
     "personality": "cheerful, helpful, loves talking to customers",
+    "personality_traits": {
+      "archetype": "helper",
+      "temperament": "optimistic_chatterbox",
+      "speech_style": "friendly, enthusiastic, rambling",
+      "quirks": ["organizes items constantly", "offers unsolicited advice"],
+      "values": ["helpfulness", "community", "fairness"],
+      "fears": ["disappointing customers", "running out of supplies"]
+    },
     "faction": "locals",
     "goals": ["help adventurers", "sell supplies"],
+    "current_goal": "stock rare healing potions",
     "traits": {
       "courage": 0.4,
       "honor": 0.8,
       "intelligence": 0.6,
       "charisma": 0.7
     },
+    "mood": 0.3,
+    "current_location": "general_store",
+    "last_interaction_turn": 0,
     "relationship_to_player": 0.0,
     "description": "A stocky man with a round face and a permanent friendly smile. His hands are always busy organizing inventory.",
     "dialogue_sample": "Welcome, friend! Can I interest you in anything?"
+  },
+  "guard_captain": {
+    "id": "guard_captain",
+    "name": "Captain Varen",
+    "role": "guard_captain",
+    "location": "town_square",
+    "personality": "duty-bound, suspicious of strangers, honorable",
+    "personality_traits": {
+      "archetype": "lawkeeper",
+      "temperament": "stern_professional",
+      "speech_style": "formal, clipped, authoritative",
+      "quirks": ["stands at attention even in casual conversation", "checks surroundings constantly"],
+      "values": ["justice", "order", "duty"],
+      "fears": ["failing his duty", "corruption in ranks", "threats to town"]
+    },
+    "faction": "town_guard",
+    "goals": ["maintain order", "protect citizens", "root out criminals"],
+    "current_goal": "investigate recent thefts",
+    "traits": {
+      "courage": 0.9,
+      "honor": 0.9,
+      "intelligence": 0.6,
+      "charisma": 0.5
+    },
+    "mood": -0.1,
+    "current_location": "town_square",
+    "last_interaction_turn": 0,
+    "relationship_to_player": 0.0,
+    "description": "A tall man in polished armor with weathered features and sharp eyes that miss nothing. His hand rests on his sword pommel.",
+    "dialogue_sample": "State your business in Thornhaven."
+  },
+  "mysterious_stranger": {
+    "id": "mysterious_stranger",
+    "name": "Raven",
+    "role": "informant",
+    "location": "tavern",
+    "personality": "secretive, mysterious, knows more than she reveals",
+    "personality_traits": {
+      "archetype": "enigma",
+      "temperament": "cryptic_observer",
+      "speech_style": "vague, poetic, hints rather than tells",
+      "quirks": ["appears and disappears without explanation", "speaks in riddles"],
+      "values": ["secrets", "balance", "knowledge"],
+      "fears": ["being fully known", "losing mystique", "powerful enemies finding her"]
+    },
+    "faction": "none",
+    "goals": ["gather information", "influence events subtly", "stay hidden"],
+    "current_goal": "observe the player's choices",
+    "traits": {
+      "courage": 0.7,
+      "honor": 0.5,
+      "intelligence": 0.9,
+      "charisma": 0.6
+    },
+    "mood": 0.0,
+    "current_location": "tavern",
+    "last_interaction_turn": 0,
+    "relationship_to_player": 0.0,
+    "description": "A hooded figure in dark clothing who seems to blend with the shadows. Only her piercing eyes are clearly visible.",
+    "dialogue_sample": "The winds carry many secrets, traveler... if you know how to listen."
   }
 }

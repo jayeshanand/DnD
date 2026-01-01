@@ -78,18 +78,32 @@ Style guidelines:
 - Use sensory details (sounds, smells, textures)
 - Be consistent with previously established facts
 
+NPC PERSONALITY RULES:
+- Each NPC has a distinct personality, speech style, and temperament
+- NPCs react based on their personality traits, values, and fears
+- Speech style must match the NPC's archetype (e.g., gruff, smooth, enthusiastic)
+- NPCs remember past interactions and reference conversation history
+- Relationship changes should be based on player actions aligning with or opposing NPC values
+- NPCs have their own goals and may pursue them in conversations
+- Mood affects how NPCs respond (happy NPCs are more helpful, upset ones less so)
+
 Turn structure:
 - Read the player's action
+- Consider NPC personalities and conversation history
 - Resolve mechanics and consequences
 - Describe what happens in 'narration'
-- Include NPC speeches in 'npc_speeches'
+- Include NPC speeches in 'npc_speeches' with appropriate emotions
 - Apply effects in 'effects'
 - Suggest 2-4 options in 'suggested_options'"""
 
     @staticmethod
-    def game_context(state: GameState) -> str:
+    def game_context(state: GameState, max_history_turns: int = 5) -> str:
         """
         Build a context prompt from game state.
+        
+        Args:
+            state: Current game state
+            max_history_turns: Maximum number of recent conversation turns to include
         """
         player = state.player
         location = state.locations.get(state.current_location_id)
@@ -97,10 +111,59 @@ Turn structure:
         loc_desc = location.description if location else ""
 
         npcs_here = []
+        npcs_here_details = []
         if location:
             for npc_id in location.npcs:
                 if npc_id in state.npcs:
-                    npcs_here.append(state.npcs[npc_id].get("name", npc_id))
+                    npc = state.npcs[npc_id]
+                    npcs_here.append(npc.get("name", npc_id))
+                    
+                    # Build detailed NPC description
+                    npc_detail = f"\n{npc.get('name', npc_id)} ({npc_id}):\n"
+                    npc_detail += f"  Role: {npc.get('role', 'unknown')}\n"
+                    npc_detail += f"  Personality: {npc.get('personality', 'unknown')}\n"
+                    
+                    # Add personality traits if available
+                    if 'personality_traits' in npc:
+                        traits = npc['personality_traits']
+                        npc_detail += f"  Archetype: {traits.get('archetype', 'unknown')}\n"
+                        npc_detail += f"  Temperament: {traits.get('temperament', 'unknown')}\n"
+                        npc_detail += f"  Speech Style: {traits.get('speech_style', 'normal')}\n"
+                        npc_detail += f"  Values: {', '.join(traits.get('values', []))}\n"
+                        npc_detail += f"  Fears: {', '.join(traits.get('fears', []))}\n"
+                        if traits.get('quirks'):
+                            npc_detail += f"  Quirks: {', '.join(traits.get('quirks', []))}\n"
+                    
+                    # Add current goal
+                    if 'current_goal' in npc:
+                        npc_detail += f"  Current Goal: {npc['current_goal']}\n"
+                    
+                    # Add relationship status
+                    relationship = state.npc_relationships.get(npc_id, 0.0)
+                    if relationship >= 0.7:
+                        rel_status = "trusted ally"
+                    elif relationship >= 0.3:
+                        rel_status = "friendly"
+                    elif relationship >= -0.3:
+                        rel_status = "neutral"
+                    elif relationship >= -0.7:
+                        rel_status = "unfriendly"
+                    else:
+                        rel_status = "hostile"
+                    npc_detail += f"  Relationship with player: {rel_status} ({relationship:+.1f})\n"
+                    
+                    # Add mood if available
+                    if 'mood' in npc:
+                        mood = npc['mood']
+                        if mood > 0.3:
+                            mood_status = "happy"
+                        elif mood > -0.3:
+                            mood_status = "neutral"
+                        else:
+                            mood_status = "upset"
+                        npc_detail += f"  Current Mood: {mood_status} ({mood:+.1f})\n"
+                    
+                    npcs_here_details.append(npc_detail)
 
         quests_str = ""
         if state.active_quests:
@@ -124,12 +187,37 @@ Inventory: {', '.join(state.player.inventory.items.keys()) if state.player.inven
 {loc_desc}
 """
         if npcs_here:
-            context += f"\nNPCs Here: {', '.join(npcs_here)}\n"
+            context += f"\n=== NPCs PRESENT ==="
+            for npc_detail in npcs_here_details:
+                context += npc_detail
 
         if quests_str:
             context += f"\n{quests_str}"
 
-        if state.world_events_log:
+        # Add conversation history (recent turns)
+        if state.conversation_history:
+            context += f"\n=== RECENT CONVERSATION HISTORY ===\n"
+            # Get last N turns
+            recent_turns = state.conversation_history[-max_history_turns:]
+            for turn_data in recent_turns:
+                context += f"\nTurn {turn_data.get('turn_number', '?')}:\n"
+                context += f"  Player: {turn_data.get('player_action', '')}\n"
+                context += f"  Narration: {turn_data.get('narration', '')}\n"
+                
+                # Add NPC speeches if any
+                if turn_data.get('npc_speeches'):
+                    for speech in turn_data['npc_speeches']:
+                        npc_name = state.npcs.get(speech.get('npc_id', ''), {}).get('name', speech.get('npc_id', 'Unknown'))
+                        emotion = speech.get('emotion', 'neutral')
+                        text = speech.get('text', '')
+                        context += f"  {npc_name} ({emotion}): \"{text}\"\n"
+                
+                # Add effects summary if any
+                if turn_data.get('effects_summary'):
+                    context += f"  Effects: {', '.join(turn_data['effects_summary'])}\n"
+
+        # Fallback to old events log if no conversation history yet
+        elif state.world_events_log:
             context += f"\nRecent Events:\n"
             for event in state.world_events_log[-3:]:  # Last 3 events
                 context += f"  - {event}\n"

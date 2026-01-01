@@ -22,9 +22,15 @@ class GameEngine:
         new_time = current + timedelta(minutes=minutes)
         self.state.game_time = new_time.isoformat()
 
-    def apply_effects(self, effects: WorldEffect) -> List[str]:
+    def apply_effects(self, effects: WorldEffect, player_action: str = "", narration: str = "", npc_speeches: List[dict] = None) -> List[str]:
         """
         Apply DM response effects to game state.
+        
+        Args:
+            effects: WorldEffect object with state changes
+            player_action: What the player did this turn
+            narration: DM's narration for this turn
+            npc_speeches: List of NPC speeches this turn
         
         Returns:
             List of log messages describing what changed.
@@ -113,6 +119,27 @@ class GameEngine:
                     status = "hostile"
                 
                 log.append(f"🤝 {npc_name}: {change_symbol}{delta:.1f} ({status})")
+                
+                # Update NPC's last_interaction_turn
+                if 'last_interaction_turn' in self.state.npcs[npc_id]:
+                    self.state.npcs[npc_id]['last_interaction_turn'] = self.state.turn
+
+        # Record conversation turn in history
+        if player_action and narration:
+            from datetime import datetime
+            conversation_turn = {
+                'turn_number': self.state.turn,
+                'player_action': player_action,
+                'narration': narration,
+                'npc_speeches': npc_speeches or [],
+                'effects_summary': log.copy(),
+                'timestamp': datetime.now().isoformat()
+            }
+            self.state.conversation_history.append(conversation_turn)
+            
+            # Keep only last 10 turns to avoid context overflow
+            if len(self.state.conversation_history) > 10:
+                self.state.conversation_history = self.state.conversation_history[-10:]
 
         return log
 

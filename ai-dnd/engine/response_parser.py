@@ -71,6 +71,51 @@ class ResponseValidator:
     """Validator for ensuring DMResponse is consistent with game state."""
 
     @staticmethod
+    def _find_location_id(candidate: Optional[str], game_state: GameState) -> Optional[str]:
+        """Resolve a location id from either an id or a location name (case-insensitive)."""
+        def _slug(s: str) -> str:
+            return re.sub(r"[^a-z0-9_]+", "_", s.strip().lower()).strip("_")
+
+        if not candidate:
+            return None
+        if candidate in game_state.locations:
+            return candidate
+
+        normalized = candidate.strip().lower()
+        slug_candidate = _slug(candidate)
+        for loc_id, loc in game_state.locations.items():
+            if loc.name.strip().lower() == normalized:
+                return loc_id
+            if _slug(loc.name) == slug_candidate:
+                return loc_id
+            if _slug(loc_id) == slug_candidate:
+                return loc_id
+        return None
+
+    @staticmethod
+    def _find_npc_id(candidate: Optional[str], game_state: GameState) -> Optional[str]:
+        """Resolve an NPC id from either an id or an NPC name (case-insensitive)."""
+        def _slug(s: str) -> str:
+            return re.sub(r"[^a-z0-9_]+", "_", s.strip().lower()).strip("_")
+
+        if not candidate:
+            return None
+        if candidate in game_state.npcs:
+            return candidate
+
+        normalized = candidate.strip().lower()
+        slug_candidate = _slug(candidate)
+        for npc_id, npc in game_state.npcs.items():
+            npc_name = str(npc.get("name", "")).strip().lower()
+            if npc_name == normalized:
+                return npc_id
+            if _slug(npc_name) == slug_candidate:
+                return npc_id
+            if _slug(npc_id) == slug_candidate:
+                return npc_id
+        return None
+
+    @staticmethod
     def validate_dm_response(response: DMResponse, game_state: GameState) -> tuple[bool, list[str]]:
         """
         Validate DMResponse against game state.
@@ -82,20 +127,31 @@ class ResponseValidator:
         
         # Validate location
         if response.effects.location:
-            if response.effects.location not in game_state.locations:
+            resolved_location = ResponseValidator._find_location_id(response.effects.location, game_state)
+            if not resolved_location:
                 issues.append(f"Invalid location: {response.effects.location}")
+            else:
+                response.effects.location = resolved_location
         
         # Validate NPCs
         for npc_speech in response.npc_speeches:
-            if npc_speech.npc_id not in game_state.npcs:
+            resolved_npc = ResponseValidator._find_npc_id(npc_speech.npc_id, game_state)
+            if not resolved_npc:
                 issues.append(f"Invalid NPC ID: {npc_speech.npc_id}")
+            else:
+                npc_speech.npc_id = resolved_npc
         
         # Validate NPC relationships
+        cleaned_relationships = {}
         for npc_id, delta in response.effects.npc_relationship_changes.items():
-            if npc_id not in game_state.npcs:
+            resolved_npc = ResponseValidator._find_npc_id(npc_id, game_state)
+            if not resolved_npc:
                 issues.append(f"Invalid NPC in relationship changes: {npc_id}")
+                continue
+            cleaned_relationships[resolved_npc] = delta
             if not (-1.0 <= delta <= 1.0):
-                issues.append(f"Relationship change out of range for {npc_id}: {delta}")
+                issues.append(f"Relationship change out of range for {resolved_npc}: {delta}")
+        response.effects.npc_relationship_changes = cleaned_relationships
         
         # Validate quests
         for quest_id in response.effects.completed_quests:
@@ -124,15 +180,21 @@ class ResponseValidator:
         effects = response.effects
         
         # Fix location if invalid
-        if effects.location and effects.location not in game_state.locations:
-            print(f"[Sanitizing: Invalid location '{effects.location}' -> keeping current]")
-            effects.location = None
+        if effects.location:
+            resolved_location = ResponseValidator._find_location_id(effects.location, game_state)
+            if resolved_location:
+                effects.location = resolved_location
+            else:
+                print(f"[Sanitizing: Invalid location '{effects.location}' -> keeping current]")
+                effects.location = None
         
         # Remove invalid NPCs from speeches
-        valid_speeches = [
-            npc for npc in response.npc_speeches
-            if npc.npc_id in game_state.npcs
-        ]
+        valid_speeches = []
+        for npc in response.npc_speeches:
+            resolved_npc = ResponseValidator._find_npc_id(npc.npc_id, game_state)
+            if resolved_npc:
+                npc.npc_id = resolved_npc
+                valid_speeches.append(npc)
         if len(valid_speeches) != len(response.npc_speeches):
             print(f"[Sanitizing: Removed {len(response.npc_speeches) - len(valid_speeches)} invalid NPC speeches]")
             response.npc_speeches = valid_speeches
@@ -140,11 +202,12 @@ class ResponseValidator:
         # Clamp relationship changes
         sanitized_relationships = {}
         for npc_id, delta in effects.npc_relationship_changes.items():
-            if npc_id in game_state.npcs:
+            resolved_npc = ResponseValidator._find_npc_id(npc_id, game_state)
+            if resolved_npc:
                 clamped = max(-1.0, min(1.0, delta))
-                sanitized_relationships[npc_id] = clamped
+                sanitized_relationships[resolved_npc] = clamped
                 if clamped != delta:
-                    print(f"[Sanitizing: Clamped relationship change for {npc_id}: {delta} -> {clamped}]")
+                    print(f"[Sanitizing: Clamped relationship change for {resolved_npc}: {delta} -> {clamped}]")
         effects.npc_relationship_changes = sanitized_relationships
         
         # Remove completed quests that don't exist

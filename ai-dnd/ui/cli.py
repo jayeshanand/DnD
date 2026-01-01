@@ -141,6 +141,39 @@ class GameCLI:
         else:
             return True  # Custom action, let LLM handle
 
+    def confirm_effects(self, effects, state: GameState) -> bool:
+        """Ask the player to confirm costly effects before applying them."""
+        costs = []
+
+        if effects.gold_change < 0:
+            costs.append(f"Spend {-effects.gold_change} gold")
+
+        if effects.hp_change < 0:
+            costs.append(f"Lose {-effects.hp_change} HP")
+
+        negative_relationships = {
+            npc_id: delta for npc_id, delta in effects.npc_relationship_changes.items()
+            if delta < 0
+        }
+        if negative_relationships:
+            names = [state.npcs.get(nid, {}).get("name", nid) for nid in negative_relationships]
+            costs.append(f"Relationship drops with {', '.join(names)}")
+
+        if not costs:
+            return True
+
+        print("\n[CONFIRM] This action will:")
+        for cost in costs:
+            print(f"  - {cost}")
+
+        while True:
+            choice = input("Proceed? (y/n): ").strip().lower()
+            if choice in ("y", "yes"):
+                return True
+            if choice in ("n", "no", ""):
+                return False
+            print("Please type 'y' or 'n'.")
+
     def run_turn(self, player_action: str) -> bool:
         """
         Run a single game turn with structured JSON response.
@@ -153,9 +186,6 @@ class GameCLI:
         if player_action[0] in "12345678" or player_action.lower() in ["q"]:
             if not self.handle_quick_action(player_action):
                 return True
-
-        # Process turn in engine
-        self.engine.process_turn(player_action)
 
         # Get DM response with retry logic
         system_prompt, user_prompt = DMPromptBuilder.construct_full_prompt(
@@ -186,8 +216,19 @@ class GameCLI:
                 print(f"  - {issue}")
             parsed = ResponseValidator.sanitize_effects(parsed, state)
 
-        # Apply effects to game state
-        effect_log = self.engine.apply_effects(parsed.effects)
+        # Confirm effects; if declined, abort turn without changes or narration
+        if not self.confirm_effects(parsed.effects, state):
+            print("\n[INFO] Action canceled; nothing happens.")
+            return True
+
+        # Process turn and apply effects to game state
+        self.engine.process_turn(player_action)
+        effect_log = self.engine.apply_effects(
+            parsed.effects,
+            player_action=player_action,
+            narration=parsed.narration,
+            npc_speeches=[speech.__dict__ for speech in parsed.npc_speeches]
+        )
 
         # Display narration
         print("\n" + "=" * 70)
@@ -199,14 +240,38 @@ class GameCLI:
             print("\n" + "-" * 70)
             for npc_speech in parsed.npc_speeches:
                 npc_name = state.npcs.get(npc_speech.npc_id, {}).get('name', npc_speech.npc_id)
-                emotion_emoji = {
-                    'friendly': '😊', 'joy': '😄', 'happy': '😊',
-                    'angry': '😠', 'fear': '😨', 'sad': '😢',
-                    'surprise': '😲', 'neutral': '😐',
-                    'suspicious': '🤨', 'grateful': '🙏'
-                }.get(npc_speech.emotion, '')
                 
-                print(f"{npc_name} {emotion_emoji}: \"{npc_speech.text}\"")
+                # Enhanced emotion emojis
+                emotion_emoji = {
+                    'friendly': '😊', 'joy': '😄', 'happy': '😊', 'cheerful': '😀',
+                    'angry': '😠', 'furious': '😡', 'annoyed': '😒',
+                    'fear': '😨', 'worried': '😟', 'nervous': '😰',
+                    'sad': '😢', 'melancholy': '😔', 'depressed': '😞',
+                    'surprise': '😲', 'shocked': '😱', 'amazed': '🤩',
+                    'neutral': '😐', 'calm': '😌',
+                    'suspicious': '🤨', 'distrustful': '🧐',
+                    'grateful': '🙏', 'thankful': '🥰',
+                    'gruff': '😤', 'stern': '😑',
+                    'curious': '🤔', 'interested': '👀',
+                    'confused': '😕', 'puzzled': '🤷',
+                    'excited': '🤗', 'enthusiastic': '😆',
+                    'secretive': '🤫', 'mysterious': '🎭',
+                    'compassionate': '🥺', 'caring': '💝'
+                }.get(npc_speech.emotion.lower(), '💬')
+                
+                # Get NPC's personality archetype for styling
+                archetype = ""
+                if npc_speech.npc_id in state.npcs:
+                    traits = state.npcs[npc_speech.npc_id].get('personality_traits', {})
+                    archetype = traits.get('archetype', '')
+                
+                # Display with emotion and archetype context
+                print(f"\n{npc_name} {emotion_emoji} [{npc_speech.emotion}]")
+                print(f'  "{npc_speech.text}"')
+                
+                # Add visual separator for multiple NPCs
+                if len(parsed.npc_speeches) > 1:
+                    print()
 
         # Display effects
         if effect_log:

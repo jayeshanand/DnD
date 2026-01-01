@@ -98,6 +98,31 @@ class Player:
 
 
 @dataclass
+class ConversationTurn:
+    """Represents a single conversation turn."""
+    turn_number: int
+    player_action: str
+    narration: str
+    npc_speeches: List[dict]  # [{"npc_id": "...", "text": "...", "emotion": "..."}]
+    effects_summary: List[str]  # Brief summary of state changes
+    timestamp: str  # ISO format
+
+    def to_dict(self):
+        return {
+            'turn_number': self.turn_number,
+            'player_action': self.player_action,
+            'narration': self.narration,
+            'npc_speeches': self.npc_speeches,
+            'effects_summary': self.effects_summary,
+            'timestamp': self.timestamp
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(**data)
+
+
+@dataclass
 class GameState:
     """Core game state containing all world and player data."""
     player: Player
@@ -108,6 +133,7 @@ class GameState:
     active_quests: Dict[str, Quest] = field(default_factory=dict)
     npcs: Dict[str, dict] = field(default_factory=dict)  # NPC data
     world_events_log: List[str] = field(default_factory=list)  # Recent events
+    conversation_history: List[dict] = field(default_factory=list)  # Full conversation turns
     last_narration: str = ""
     npc_relationships: Dict[str, float] = field(default_factory=dict)  # npc_id -> relationship (-1.0 to 1.0)
 
@@ -122,6 +148,7 @@ class GameState:
             'active_quests': {k: v.to_dict() for k, v in self.active_quests.items()},
             'npcs': self.npcs,
             'world_events_log': self.world_events_log,
+            'conversation_history': self.conversation_history,
             'last_narration': self.last_narration,
             'npc_relationships': self.npc_relationships,
         }
@@ -147,6 +174,7 @@ class GameState:
             active_quests=active_quests,
             npcs=data['npcs'],
             world_events_log=data['world_events_log'],
+            conversation_history=data.get('conversation_history', []),
             last_narration=data['last_narration'],
             npc_relationships=data.get('npc_relationships', {}),
         )
@@ -162,6 +190,7 @@ class GameState:
             'active_quests': {k: v.to_dict() for k, v in self.active_quests.items()},
             'npcs': self.npcs,
             'world_events_log': self.world_events_log,
+            'conversation_history': self.conversation_history,
             'last_narration': self.last_narration,
             'npc_relationships': self.npc_relationships,
         }

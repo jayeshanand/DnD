@@ -4,17 +4,29 @@ A progressive, step-by-step implementation of an AI-powered Dungeons & Dragons w
 
 ## Phases
 
-- **Phase 0** ✓ Foundations and Tech Choices - Complete!
-- **Phase 1** ✓ Minimal Text-Only Single-DM Game - Complete!
-- **Phase 2** Structured Outputs & State Management
-- **Phase 3** NPC Objects with Multiple Personalities
-- **Phase 4** Memory System for NPCs
-- **Phase 5** True Multi-Agent NPCs
-- **Phase 6** World Simulation & Factions
-- **Phase 7** Decision Policies & Heuristics
-- **Phase 8** Rich UI & Better UX
-- **Phase 9** Voice Input & TTS
-- **Phase 10** Polish, Scenarios & Testing
+- **Phase 0** ✅ Foundations and Tech Choices - Complete!
+- **Phase 1** ✅ Minimal Text-Only Single-DM Game - Complete!
+- **Phase 2** ✅ Structured Outputs & State Management - Complete!
+- **Phase 3** ✅ NPC Objects with Personalities & Conversation Memory - Complete!
+- **Phase 4** ⏳ Memory System for NPCs (Vector DB)
+- **Phase 5** ⏳ True Multi-Agent NPCs
+- **Phase 6** ⏳ World Simulation & Factions
+- **Phase 7** ⏳ Decision Policies & Heuristics
+- **Phase 8** ⏳ Rich UI & Better UX
+- **Phase 9** ⏳ Voice Input & TTS
+- **Phase 10** ⏳ Polish, Scenarios & Testing
+
+## Latest: Phase 3 Complete! 🎉
+
+**NPCs Now Have Personalities and Remember Conversations!**
+
+- 5 distinct NPCs with full personality profiles (archetypes, values, fears)
+- Conversation history system (last 10 turns stored, last 5 in context)
+- NPCs speak in character based on their personality
+- Enhanced dialogue display with emotions and emojis
+- Relationship tracking affects future interactions
+
+See [PHASE3_COMPLETE.md](PHASE3_COMPLETE.md) for details.
 
 ## Quick Start
 

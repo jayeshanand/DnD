@@ -2,7 +2,7 @@
 
 A complete step-by-step implementation guide from "nothing" to "full AI-powered tabletop RPG with autonomous NPCs".
 
-**Current Status**: ✅ Phase 0 & 1 Complete
+**Current Status**: ✅ Phase 0, 1, 2 & 3 Complete
 
 ## Phase Overview
 
@@ -11,7 +11,7 @@ A complete step-by-step implementation guide from "nothing" to "full AI-powered 
 | 0 | Foundations & Tech | ✅ Done | Setup | Low |
 | 1 | Text-Only Single-DM | ✅ Done | **Playable** | Low |
 | 2 | Structured JSON Output | ✅ Done | **More Playable** | Medium |
-| 3 | NPC Objects & Personalities | ⏳ Planned | **Rich** | Medium |
+| 3 | NPC Objects & Personalities | ✅ Done | **Rich** | Medium |
 | 4 | Memory System | ⏳ Planned | **Immersive** | Medium |
 | 5 | Multi-Agent NPCs | ⏳ Planned | **Dynamic** | High |
 | 6 | World Simulation | ⏳ Planned | **Living World** | High |
@@ -130,46 +130,63 @@ Player Action → LLM generates JSON → Parser validates → Engine applies eff
 
 ---
 
-## Phase 3: NPC Objects & Distinct Personalities ⏳
+## Phase 3: NPC Objects & Distinct Personalities ✅
 
 **Goal**: NPCs feel like different characters, not just props.
 
 **Problem It Solves**:
 - Currently: NPCs are just data, all sound the same
-- After: NPCs have distinct personalities, react differently
+- After: NPCs have distinct personalities, react differently, remember conversations
 
 **Core Tasks**:
-1. Expand NPC schema (personality traits, goals, fears)
-2. Update world data with rich NPC definitions
-3. Modify prompts to pass NPC info to LLM
-4. Track NPC state (location, mood, last_interaction)
-5. CLI shows NPC names & emotions in dialogue
+1. ✅ Expand NPC schema (personality traits, goals, fears)
+2. ✅ Update world data with rich NPC definitions (5 NPCs with full personalities)
+3. ✅ Modify prompts to pass NPC info to LLM
+4. ✅ Track NPC state (location, mood, last_interaction)
+5. ✅ CLI shows NPC names & emotions in dialogue
+6. ✅ Add conversation history tracking (rolling 10-turn window)
 
 **New Features**:
-- Personality matters: brave vs cowardly, honest vs deceptive
-- NPCs have goals and motivations
-- Relationship tracking (trust, fear, debt)
-- NPC location tracking
-- NPC dialogue varies by personality
+- ✅ Personality matters: brave vs cowardly, honest vs deceptive
+- ✅ NPCs have goals and motivations
+- ✅ Relationship tracking (trust, fear, debt)
+- ✅ NPC location tracking
+- ✅ NPC dialogue varies by personality
+- ✅ **Conversation Memory**: Last 5 turns of full dialogue included in context
+- ✅ NPC emotions displayed with emojis and descriptions
 
 **How It Works**:
 ```
-Bartender (gruff): "What do you want?"
-Merchant (cunning): "Ah, I can see you're looking for something special..."
-Shopkeeper (cheerful): "Welcome, friend! What can I help you with?"
+Turn 1: Player talks to Mira (gruff bartender)
+  → Mira responds in direct, no-nonsense way
+Turn 2: Player asks about rumors
+  → Context includes Turn 1 conversation
+  → Mira remembers player and continues naturally
+Turn 3: Player mentions helping the guard
+  → Relationship +0.2 (aligns with Mira's "loyalty" value)
 ```
 
 **Exit Criteria**:
-- At least 5 NPCs with distinct personalities in data
-- Prompts include personality info
-- CLI displays NPC names/emotions with dialogue
-- Relationships change based on interactions
+- ✅ At least 5 NPCs with distinct personalities in data
+- ✅ Prompts include personality info (archetype, temperament, speech style)
+- ✅ CLI displays NPC names/emotions with dialogue
+- ✅ Relationships change based on interactions
+- ✅ Conversation history preserved and included in context
+- ✅ All tests pass (test_phase3.py)
 
-**Time**: 4-5 hours
+**Time**: 4-5 hours (completed)
 
 **Builds On**: Phase 2 (structured JSON)
 
-**Next**: Go to Phase 4
+**Files Modified**:
+- `data/npcs.json` - Added 5 NPCs with full personality traits
+- `engine/state.py` - Added ConversationTurn class and conversation_history field
+- `engine/game_loop.py` - Records full conversation turns with narration and NPC speeches
+- `llm/prompts.py` - Includes NPC personalities and conversation history in context
+- `ui/cli.py` - Enhanced NPC dialogue display with emotions and emojis
+- `test_phase3.py` (new) - Comprehensive test suite
+
+**Next**: Go to Phase 4 (Memory System with Vector DB)
 
 ---
 
