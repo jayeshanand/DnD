@@ -16,18 +16,6 @@ A progressive, step-by-step implementation of an AI-powered Dungeons & Dragons w
 - **Phase 9** ⏳ Voice Input & TTS
 - **Phase 10** ⏳ Polish, Scenarios & Testing
 
-## Latest: Phase 3 Complete! 🎉
-
-**NPCs Now Have Personalities and Remember Conversations!**
-
-- 5 distinct NPCs with full personality profiles (archetypes, values, fears)
-- Conversation history system (last 10 turns stored, last 5 in context)
-- NPCs speak in character based on their personality
-- Enhanced dialogue display with emotions and emojis
-- Relationship tracking affects future interactions
-
-See [PHASE3_COMPLETE.md](PHASE3_COMPLETE.md) for details.
-
 ## Quick Start
 
 ### Prerequisites
@@ -63,7 +51,7 @@ If you don't have Ollama installed:
 
 The game will warn if Ollama isn't available but let you continue with simulated responses.
 
-## Architecture
+## Architecture (current)
 
 ```
 ai-dnd/
@@ -84,29 +72,25 @@ ai-dnd/
 │   ├── factions.json      # Faction data
 │   ├── items.json         # Item definitions
 │   └── rules.json         # Game rules
+│   └── save_state.json    # Previously played game's saved status
 ├── agents/                 # (Phase 5+) NPC agents
 ├── world/                  # (Phase 6+) World simulation
 ├── memory/                 # (Phase 4+) Memory systems
+├── docs/
+│   └── phases/             # Phase plans and writeups
+├── tests/                  # Test suites (phase and commerce tests)
 └── logs/                   # Game session logs
 ```
 
-## Current Features (Phase 1)
+## Features
 
-- ✓ Persistent game state (save/load to JSON)
-- ✓ Rich location descriptions
-- ✓ NPC definitions with personalities
-- ✓ Inventory system
-- ✓ Quest framework
-- ✓ AI DM via Ollama
-- ✓ Turn-based game loop
-- ✓ Player status display
-
-## Next Steps (Phase 2)
-
-- Structured JSON outputs from LLM
-- State validation engine
-- More deterministic world updates
-- Better error handling
+- Structured JSON DM responses for deterministic state updates
+- NPC personalities (archetypes, speech styles, values, fears, goals) and mood-aware dialogue
+- Conversation history (recent turns stored; included in prompts for coherence)
+- Relationship tracking and basic commerce rules (state price → deduct gold → deliver item; duplicate-purchase warnings)
+- Inventory, quests, locations, and time advancement
+- Save/Load full game state (including conversation history)
+- CLI with emotion-aware NPC dialogue display
 
 ## Game Controls
 
@@ -138,13 +122,50 @@ llm = OllamaClient(
 )
 ```
 
+- You can also adjust sampling in `llm/client.py` (temperature, top_p, max_tokens) for more creative vs. safer outputs.
+- Point to a remote Ollama host by changing `base_url` in `config/settings.yaml`.
+
 ### Add NPCs
 
 Edit `data/npcs.json` and add a new entry with personality, goals, etc.
 
+- Include `personality_traits` (archetype, temperament, speech_style, values, fears, quirks), `current_goal`, and optional `mood`.
+- Set `current_location` to place the NPC in a location’s `npcs` list inside `data/locations.json`.
+
 ### Add Locations
 
 Edit `data/locations.json` with new location descriptions and connections.
+
+- Add exits (direction → location_id), and list `npcs` and `items` present.
+- Keep IDs lowercase_with_underscores to match prompts and validation.
+
+### Add Items and Prices
+
+Edit `data/items.json` to add trade goods, consumables, or gear:
+
+```json
+"healing_potion": {
+    "id": "healing_potion",
+    "name": "Healing Potion",
+    "description": "Restores some health",
+    "weight": 0.5,
+    "value": 25
+}
+```
+
+- `value` is the gold price used by NPCs; ensure prices are sensible (food 2–5g, supplies 5–20g, weapons 30–100g, potions 20–50g).
+- Commerce logic expects gold to be deducted before granting items.
+
+### Tune Prompts and Context
+
+- `llm/prompts.py` controls the system prompt, JSON schema, and context building.
+- To reduce prompt length, lower `max_history_turns` in `game_context` or trim NPC details.
+- To emphasize safety or determinism, lower temperature in `OllamaClient.generate_dm_response_with_retry`.
+
+### Adjust Saving/Loading
+
+- Saves default to `data/save_state.json`; change the path when calling `save_to_file` / `load_from_file`.
+- Conversation history is included in saves; inventory and quests are persisted as well.
 
 ## Development Notes
 
@@ -167,7 +188,7 @@ If Ollama isn't available:
 - Auto-saves every 5 turns (configurable)
 - Manual save with command `7`
 - State includes player, locations, NPCs, quests
-- Memories will be saved in Phase 4+
+- Conversation history already saves; long-term memories arrive in Phase 4+
 
 ## Future Enhancements
 
