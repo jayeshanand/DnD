@@ -2,7 +2,7 @@
 
 A complete step-by-step implementation guide from "nothing" to "full AI-powered tabletop RPG with autonomous NPCs".
 
-**Current Status**: ✅ Phase 0, 1, 2 & 3 Complete
+**Current Status**: ✅ Phase 0, 1, 2, 3 & 4 Complete
 
 ## Phase Overview
 
@@ -12,7 +12,7 @@ A complete step-by-step implementation guide from "nothing" to "full AI-powered 
 | 1 | Text-Only Single-DM | ✅ Done | **Playable** | Low |
 | 2 | Structured JSON Output | ✅ Done | **More Playable** | Medium |
 | 3 | NPC Objects & Personalities | ✅ Done | **Rich** | Medium |
-| 4 | Memory System | ⏳ Planned | **Immersive** | Medium |
+| 4 | Memory System | ✅ Done | **Immersive** | Medium |
 | 5 | Multi-Agent NPCs | ⏳ Planned | **Dynamic** | High |
 | 6 | World Simulation | ⏳ Planned | **Living World** | High |
 | 7 | Decision Policies | ⏳ Planned | **Intelligent** | High |
@@ -226,6 +226,63 @@ NPC recognizes you → Relationship increases → Dialogue reflects history
 **Time**: 5-6 hours
 
 **Dependencies**: Phase 3 (personality)
+
+---
+
+## Phase 4: Memory System (Episodic & Semantic) ✅
+
+**Goal**: NPCs remember your past interactions.
+
+**Problem It Solves**:
+- Currently: every conversation is fresh, no continuity
+- After: NPCs reference what you did last time
+
+**Core Tasks**:
+1. ✅ Set up vector database (chromadb)
+2. ✅ Create memory_store.py (add_memory, retrieve_memories)
+3. ✅ Define memory types (episodic, semantic)
+4. ✅ Integrate memories into NPC prompts
+5. ✅ Update relationships based on memories
+6. ✅ Track memory decay over time
+
+**Memory Types**:
+- **Episodic**: "The player saved me from bandits at the forest" (time, emotion, importance)
+- **Semantic**: "The player works for the King" (facts, no decay)
+
+**How It Works**:
+```
+Player saves NPC → Store memory (importance=high, emotion=gratitude)
+Later conversation → Retrieve similar memories → Include in prompt
+NPC recognizes you → Relationship increases → Dialogue reflects history
+```
+
+**Exit Criteria**:
+- ✅ NPC clearly remembers past interactions
+- ✅ Memories influence relationship scores
+- ✅ Semantic memories persist, episodic ones fade
+- ✅ Memory system integrates with prompts
+- ✅ All tests pass (5/5)
+
+**Time**: 5-6 hours (completed January 3, 2026)
+
+**Dependencies**: Phase 3 (personality) ✅
+
+**Files Created**:
+- ✅ `memory/types.py` - Memory dataclasses
+- ✅ `memory/memory_store.py` - MemoryStore with ChromaDB
+- ✅ `tests/test_phase4.py` - Test suite
+- ✅ `docs/phases/PHASE4_PLAN.md` - Planning document
+- ✅ `docs/phases/PHASE4_COMPLETE.md` - Completion documentation
+
+**Files Modified**:
+- ✅ `requirements.txt` - Added chromadb, sentence-transformers
+- ✅ `memory/__init__.py` - Export memory classes
+- ✅ `engine/state.py` - Added memory_store field
+- ✅ `engine/game_loop.py` - Memory creation logic
+- ✅ `llm/prompts.py` - Memory context building
+- ✅ `ui/cli.py` - Memory viewing command
+
+**Detailed Documentation**: See `PHASE4_COMPLETE.md`
 
 **Next**: Go to Phase 5
 

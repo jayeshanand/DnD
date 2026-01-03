@@ -76,6 +76,7 @@ class GameCLI:
         print("  (6) Custom action (type your own)")
         print("  (7) Save game")
         print("  (8) Load game")
+        print("  (9) View memories (Phase 4)")
         print("  (q) Quit")
 
     def get_player_action(self) -> str:
@@ -138,8 +139,78 @@ class GameCLI:
             except Exception as e:
                 print(f"[Load failed: {e}]")
             return False
+        elif action == "9":  # View memories (Phase 4)
+            self.display_memories()
+            return False
         else:
             return True  # Custom action, let LLM handle
+    
+    def display_memories(self):
+        """Display memories for NPCs in current location (Phase 4)."""
+        state = self.engine.state
+        
+        # Check if memory system is available
+        try:
+            from memory.memory_store import MemoryStore
+            from memory.types import EpisodicMemory, SemanticMemory
+        except ImportError:
+            print("\n[MEMORIES] Memory system not available. Install with: pip install chromadb sentence-transformers")
+            return
+        
+        if not state.memory_store:
+            print("\n[MEMORIES] Memory system not initialized.")
+            return
+        
+        location = self.engine.get_current_location()
+        if not location or not location.npcs:
+            print("\n[MEMORIES] No NPCs present to have memories.")
+            return
+        
+        print("\n" + "=" * 70)
+        print("NPC MEMORIES".center(70))
+        print("=" * 70)
+        
+        # Get memory stats
+        stats = state.memory_store.get_memory_stats()
+        print(f"\nTotal memories: {stats['total_memories']} (Episodic: {stats['episodic_memories']}, Semantic: {stats['semantic_memories']})")
+        print(f"ChromaDB: {'Enabled' if stats['chromadb_enabled'] else 'Disabled'}")
+        
+        # Show memories for each NPC present
+        for npc_id in location.npcs:
+            if npc_id not in state.npcs:
+                continue
+            
+            npc_name = state.npcs[npc_id].get('name', npc_id)
+            memories = state.memory_store.get_npc_memories(npc_id)
+            
+            if memories:
+                print(f"\n--- {npc_name}'s Memories ({len(memories)}) ---")
+                
+                # Sort by importance/confidence
+                episodic_mems = [m for m in memories if isinstance(m, EpisodicMemory)]
+                semantic_mems = [m for m in memories if isinstance(m, SemanticMemory)]
+                
+                episodic_mems.sort(key=lambda m: m.importance * m.current_strength, reverse=True)
+                semantic_mems.sort(key=lambda m: m.confidence, reverse=True)
+                
+                if episodic_mems:
+                    print("\nEpisodic Memories (experiences):")
+                    for mem in episodic_mems[:5]:  # Show top 5
+                        emotion_icon = {"gratitude": "🙏", "fear": "😨", "anger": "😠", 
+                                       "joy": "😊", "sadness": "😢", "neutral": "😐"}.get(mem.emotion, "")
+                        strength_pct = int(mem.current_strength * 100)
+                        importance = "⭐" * int(mem.importance * 3)
+                        print(f"  {emotion_icon} [{importance} {strength_pct}%] {mem.text}")
+                
+                if semantic_mems:
+                    print("\nSemantic Memories (facts):")
+                    for mem in semantic_mems[:5]:  # Show top 5
+                        confidence_pct = int(mem.confidence * 100)
+                        print(f"  📝 [{mem.fact_type}, {confidence_pct}%] {mem.text}")
+            else:
+                print(f"\n--- {npc_name} has no memories yet ---")
+        
+        print("\n" + "=" * 70)
 
     def confirm_effects(self, effects, state: GameState) -> bool:
         """Ask the player to confirm costly effects before applying them."""

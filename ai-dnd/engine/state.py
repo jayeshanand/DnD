@@ -4,6 +4,15 @@ from dataclasses import dataclass, field, asdict
 from datetime import datetime
 from typing import Dict, List, Optional
 import json
+import os
+
+# Import memory system (Phase 4)
+try:
+    from memory.memory_store import MemoryStore
+    MEMORY_AVAILABLE = True
+except ImportError:
+    MEMORY_AVAILABLE = False
+    MemoryStore = None
 
 
 @dataclass
@@ -136,6 +145,12 @@ class GameState:
     conversation_history: List[dict] = field(default_factory=list)  # Full conversation turns
     last_narration: str = ""
     npc_relationships: Dict[str, float] = field(default_factory=dict)  # npc_id -> relationship (-1.0 to 1.0)
+    memory_store: Optional[MemoryStore] = None  # Phase 4: Long-term memory system
+    
+    def __post_init__(self):
+        """Initialize memory store if not provided."""
+        if MEMORY_AVAILABLE and self.memory_store is None:
+            self.memory_store = MemoryStore()
 
     def save_to_file(self, filepath: str):
         """Save game state to JSON file."""
@@ -154,6 +169,11 @@ class GameState:
         }
         with open(filepath, 'w') as f:
             json.dump(data, f, indent=2)
+        
+        # Save memories separately (Phase 4)
+        if MEMORY_AVAILABLE and self.memory_store:
+            memory_path = filepath.replace('.json', '_memories.json')
+            self.memory_store.save_to_json(memory_path)
 
     @classmethod
     def load_from_file(cls, filepath: str):
@@ -165,7 +185,7 @@ class GameState:
         locations = {k: Location.from_dict(v) for k, v in data['locations'].items()}
         active_quests = {k: Quest.from_dict(v) for k, v in data['active_quests'].items()}
 
-        return cls(
+        state = cls(
             player=player,
             current_location_id=data['current_location_id'],
             game_time=data['game_time'],
@@ -178,6 +198,14 @@ class GameState:
             last_narration=data['last_narration'],
             npc_relationships=data.get('npc_relationships', {}),
         )
+        
+        # Load memories separately (Phase 4)
+        if MEMORY_AVAILABLE and state.memory_store:
+            memory_path = filepath.replace('.json', '_memories.json')
+            if os.path.exists(memory_path):
+                state.memory_store.load_from_json(memory_path)
+        
+        return state
 
     def to_dict(self):
         """Convert entire state to dictionary."""

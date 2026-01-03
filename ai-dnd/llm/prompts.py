@@ -3,6 +3,14 @@
 from engine.state import GameState
 from typing import Optional
 
+# Check if memory system is available (Phase 4)
+try:
+    from memory.memory_store import MemoryStore
+    from memory.types import EpisodicMemory, SemanticMemory
+    MEMORY_AVAILABLE = True
+except ImportError:
+    MEMORY_AVAILABLE = False
+
 
 class DMPromptBuilder:
     """Builder for constructing DM system and context prompts."""
@@ -101,13 +109,93 @@ COMMERCE & TRANSACTION RULES:
 Turn structure:
 - Read the player's action
 - Consider NPC personalities and conversation history
+- Check memories for relevant past events (Phase 4)
 - Check if this is a commercial transaction (buying/selling)
 - If commercial: State price, deduct gold, then give item
 - Resolve mechanics and consequences
 - Describe what happens in 'narration'
 - Include NPC speeches in 'npc_speeches' with appropriate emotions
 - Apply effects in 'effects'
-- Suggest 2-4 options in 'suggested_options'"""
+- Suggest 2-4 options in 'suggested_options'
+
+MEMORY & CONTINUITY (Phase 4):
+- NPCs remember important past events with the player
+- Reference memories naturally in dialogue when relevant
+- Episodic memories include specific events with emotional context
+- Semantic memories are general facts about the player
+- Higher importance memories are more likely to be referenced
+- Let past actions influence current NPC attitudes and responses"""
+
+    @staticmethod
+    def build_memory_context(state: GameState, player_input: str, max_memories: int = 5) -> str:
+        """Build memory context for NPCs present in current location.
+        
+        Args:
+            state: Current game state
+            player_input: Player's current action (used for relevance search)
+            max_memories: Maximum memories per NPC
+            
+        Returns:
+            Formatted string with relevant memories
+        """
+        if not MEMORY_AVAILABLE or not state.memory_store:
+            return ""
+        
+        location = state.locations.get(state.current_location_id)
+        if not location or not location.npcs:
+            return ""
+        
+        memory_context = "\n=== RELEVANT MEMORIES ==="
+        
+        for npc_id in location.npcs:
+            if npc_id not in state.npcs:
+                continue
+            
+            npc_name = state.npcs[npc_id].get('name', npc_id)
+            
+            # Retrieve relevant memories for this NPC
+            memories = state.memory_store.retrieve_memories(
+                query=player_input,
+                npc_id=npc_id,
+                n=max_memories
+            )
+            
+            # Also get high-importance memories
+            important_memories = state.memory_store.get_important_memories(
+                npc_id=npc_id,
+                min_importance=0.7,
+                n=3
+            )
+            
+            # Combine and deduplicate
+            all_memories = memories + [m for m in important_memories if m not in memories]
+            all_memories = all_memories[:max_memories]
+            
+            if all_memories:
+                memory_context += f"\n\n{npc_name}'s Memories:"
+                for memory in all_memories:
+                    if isinstance(memory, EpisodicMemory):
+                        emotion_icon = {
+                            "gratitude": "🙏",
+                            "fear": "😨",
+                            "anger": "😠",
+                            "joy": "😊",
+                            "sadness": "😢",
+                            "neutral": "😐"
+                        }.get(memory.emotion, "")
+                        
+                        strength_pct = int(memory.current_strength * 100)
+                        importance_stars = "⭐" * int(memory.importance * 3)
+                        
+                        memory_context += f"\n  {emotion_icon} [Episodic {importance_stars} {strength_pct}%] {memory.text}"
+                        if memory.location:
+                            memory_context += f" (at {memory.location})"
+                    
+                    elif isinstance(memory, SemanticMemory):
+                        confidence_pct = int(memory.confidence * 100)
+                        memory_context += f"\n  📝 [Fact: {memory.fact_type}, {confidence_pct}% sure] {memory.text}"
+        
+        return memory_context if "Memories:" in memory_context else ""
 
     @staticmethod
     def game_context(state: GameState, max_history_turns: int = 5) -> str:
@@ -255,6 +343,12 @@ Inventory: {', '.join(state.player.inventory.items.keys()) if state.player.inven
         system += "\n\n" + DMPromptBuilder.json_output_format()
         
         context = DMPromptBuilder.game_context(state)
+        
+        # Add memory context (Phase 4)
+        memory_context = DMPromptBuilder.build_memory_context(state, player_input)
+        if memory_context:
+            context += memory_context
+        
         user = f"{context}\n\n=== PLAYER ACTION ===\n{player_input}\n\n=== DM RESPONSE (JSON) ===\n"
 
         return system, user

@@ -5,6 +5,13 @@ from .state import GameState, Player, Location, Quest, Inventory
 from .response_schema import WorldEffect
 from typing import List
 
+# Import memory system (Phase 4)
+try:
+    from memory.types import EpisodicMemory, SemanticMemory, create_memory_id
+    MEMORY_AVAILABLE = True
+except ImportError:
+    MEMORY_AVAILABLE = False
+
 
 class GameEngine:
     """Main game engine that orchestrates turns and state updates."""
@@ -140,8 +147,168 @@ class GameEngine:
             # Keep only last 10 turns to avoid context overflow
             if len(self.state.conversation_history) > 10:
                 self.state.conversation_history = self.state.conversation_history[-10:]
+        
+        # Create memories from significant events (Phase 4)
+        if MEMORY_AVAILABLE and self.state.memory_store:
+            self.create_memories_from_events(effects, player_action, narration, npc_speeches or [])
 
         return log
+    
+    def create_memories_from_events(self, effects: WorldEffect, player_action: str, 
+                                     narration: str, npc_speeches: List[dict]):
+        """Create memories for NPCs based on significant events (Phase 4).
+        
+        Args:
+            effects: The effects that were applied this turn
+            player_action: What the player did
+            narration: DM's narration
+            npc_speeches: List of NPC speeches
+        """
+        if not MEMORY_AVAILABLE or not self.state.memory_store:
+            return
+        
+        current_location = self.state.locations.get(self.state.current_location_id)
+        if not current_location:
+            return
+        
+        npcs_present = current_location.npcs
+        current_time = datetime.fromisoformat(self.state.game_time)
+        
+        # 1. Quest completion memories (high importance)
+        for quest_id in effects.completed_quests:
+            if quest_id in self.state.active_quests:
+                quest = self.state.active_quests[quest_id]
+                quest_giver = quest.giver_npc_id
+                
+                # Create memory for quest giver
+                if quest_giver in self.state.npcs:
+                    memory = EpisodicMemory(
+                        id=create_memory_id(),
+                        memory_type="episodic",
+                        text=f"The player completed my quest: {quest.title}. {quest.description}",
+                        npc_id=quest_giver,
+                        created_at=current_time,
+                        importance=0.9,
+                        emotion="joy",
+                        location=self.state.current_location_id,
+                        participants=["player", quest_giver],
+                        decay_rate=0.05  # Very slow decay
+                    )
+                    self.state.memory_store.add_memory(memory)
+                
+                # All NPCs present learn about it (lower importance)
+                for npc_id in npcs_present:
+                    if npc_id != quest_giver and npc_id in self.state.npcs:
+                        memory = SemanticMemory(
+                            id=create_memory_id(),
+                            memory_type="semantic",
+                            text=f"The player completed a quest for {self.state.npcs[quest_giver].get('name', quest_giver)}",
+                            npc_id=npc_id,
+                            created_at=current_time,
+                            fact_type="quest_status",
+                            subject="player",
+                            confidence=0.9,
+                            source="witnessed"
+                        )
+                        self.state.memory_store.add_memory(memory)
+        
+        # 2. Significant relationship changes (medium-high importance)
+        for npc_id, delta in effects.npc_relationship_changes.items():
+            if abs(delta) >= 0.2 and npc_id in self.state.npcs:  # Significant change
+                # Determine emotion based on change
+                if delta > 0:
+                    emotion = "gratitude" if delta > 0.3 else "joy"
+                    emotion_text = "helpful to me"
+                else:
+                    emotion = "anger" if delta < -0.3 else "neutral"
+                    emotion_text = "upset me" if delta < -0.3 else "disappointed me"
+                
+                importance = min(0.9, abs(delta) * 2)  # Scale importance by relationship change
+                
+                memory = EpisodicMemory(
+                    id=create_memory_id(),
+                    memory_type="episodic",
+                    text=f"The player {emotion_text}. {player_action}",
+                    npc_id=npc_id,
+                    created_at=current_time,
+                    importance=importance,
+                    emotion=emotion,
+                    location=self.state.current_location_id,
+                    participants=["player", npc_id],
+                    decay_rate=0.1
+                )
+                self.state.memory_store.add_memory(memory)
+        
+        # 3. Commerce transactions (medium importance)
+        if effects.gold_change < 0:  # Player spent money
+            amount = abs(effects.gold_change)
+            if amount >= 10:  # Significant purchase
+                for npc_id in npcs_present:
+                    if npc_id in self.state.npcs:
+                        npc = self.state.npcs[npc_id]
+                        if npc.get('role') in ['merchant', 'bartender', 'shopkeeper']:
+                            items_str = ", ".join(effects.new_items) if effects.new_items else "services"
+                            memory = EpisodicMemory(
+                                id=create_memory_id(),
+                                memory_type="episodic",
+                                text=f"The player bought {items_str} from me for {amount} gold",
+                                npc_id=npc_id,
+                                created_at=current_time,
+                                importance=min(0.7, amount / 50),  # Scale by amount
+                                emotion="neutral",
+                                location=self.state.current_location_id,
+                                participants=["player", npc_id],
+                                decay_rate=0.15  # Moderate decay
+                            )
+                            self.state.memory_store.add_memory(memory)
+        
+        # 4. Combat or HP changes (high importance)
+        if effects.hp_change < -5:  # Significant damage
+            for npc_id in npcs_present:
+                if npc_id in self.state.npcs:
+                    memory = EpisodicMemory(
+                        id=create_memory_id(),
+                        memory_type="episodic",
+                        text=f"I witnessed the player take {abs(effects.hp_change)} damage. {narration[:100]}",
+                        npc_id=npc_id,
+                        created_at=current_time,
+                        importance=min(0.8, abs(effects.hp_change) / 20),
+                        emotion="fear",
+                        location=self.state.current_location_id,
+                        participants=["player"] + list(npcs_present),
+                        decay_rate=0.1
+                    )
+                    self.state.memory_store.add_memory(memory)
+        
+        # 5. Significant conversation interactions (low-medium importance)
+        # Create memories for NPCs who spoke this turn
+        for speech in npc_speeches:
+            npc_id = speech.get('npc_id')
+            if npc_id and npc_id in self.state.npcs:
+                speech_text = speech.get('text', '')
+                
+                # Only create memory if it's a substantial interaction
+                if len(speech_text) > 30:
+                    memory = EpisodicMemory(
+                        id=create_memory_id(),
+                        memory_type="episodic",
+                        text=f"I talked with the player. They said: '{player_action[:50]}'. I responded about: {speech_text[:50]}",
+                        npc_id=npc_id,
+                        created_at=current_time,
+                        importance=0.3,
+                        emotion=speech.get('emotion', 'neutral'),
+                        location=self.state.current_location_id,
+                        participants=["player", npc_id],
+                        decay_rate=0.2  # Faster decay for casual conversations
+                    )
+                    self.state.memory_store.add_memory(memory)
+        
+        # 6. Run memory decay every 10 turns
+        if self.state.turn % 10 == 0:
+            self.state.memory_store.decay_memories(current_time)
+            # Prune very weak memories
+            if self.state.turn % 50 == 0:
+                self.state.memory_store.prune_weak_memories(threshold=0.1)
 
     def process_turn(self, player_action: str) -> str:
         """

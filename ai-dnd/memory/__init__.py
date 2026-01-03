@@ -1,5 +1,12 @@
-"""Memory module for AI D&D - for future memory systems."""
+"""Memory module for AI D&D - episodic and semantic memory with vector DB."""
 
-# This module will contain memory and vector DB logic in Phase 4+
+from memory.types import Memory, EpisodicMemory, SemanticMemory, create_memory_id
+from memory.memory_store import MemoryStore
 
-__all__ = []
+__all__ = [
+    "Memory",
+    "EpisodicMemory", 
+    "SemanticMemory",
+    "MemoryStore",
+    "create_memory_id"
+]

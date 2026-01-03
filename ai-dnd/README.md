@@ -8,13 +8,27 @@ A progressive, step-by-step implementation of an AI-powered Dungeons & Dragons w
 - **Phase 1** ✅ Minimal Text-Only Single-DM Game - Complete!
 - **Phase 2** ✅ Structured Outputs & State Management - Complete!
 - **Phase 3** ✅ NPC Objects with Personalities & Conversation Memory - Complete!
-- **Phase 4** ⏳ Memory System for NPCs (Vector DB)
+- **Phase 4** ✅ Memory System for NPCs (Vector DB) - Complete! 🎉
 - **Phase 5** ⏳ True Multi-Agent NPCs
 - **Phase 6** ⏳ World Simulation & Factions
 - **Phase 7** ⏳ Decision Policies & Heuristics
 - **Phase 8** ⏳ Rich UI & Better UX
 - **Phase 9** ⏳ Voice Input & TTS
 - **Phase 10** ⏳ Polish, Scenarios & Testing
+
+## What's New in Phase 4 🆕
+
+**Long-Term Memory System**: NPCs now remember past interactions!
+
+- 🧠 **Episodic Memories**: Events with emotion, importance, and decay
+- 📚 **Semantic Memories**: Persistent facts about the player
+- 🔍 **Vector Search**: ChromaDB integration for relevant memory retrieval
+- ⏰ **Memory Decay**: Important memories last longer, minor ones fade
+- 💾 **Persistence**: Memories save/load with game state
+- 🎭 **Natural Dialogue**: NPCs reference past events naturally
+- 📊 **Memory Viewer**: In-game command to view NPC memories
+
+See [PHASE4_COMPLETE.md](docs/phases/PHASE4_COMPLETE.md) for details.
 
 ## Quick Start
 
@@ -28,6 +42,9 @@ A progressive, step-by-step implementation of an AI-powered Dungeons & Dragons w
 ```bash
 cd ai-dnd
 pip install -r requirements.txt
+
+# Optional: Install memory system (Phase 4)
+pip install chromadb sentence-transformers
 ```
 
 ### Running the Game
